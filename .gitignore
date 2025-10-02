@@ -1,0 +1,15 @@
+# Virtual environment artifacts
+bin/
+include/
+lib/
+share/
+pyvenv.cfg
+
+# Python bytecode caches
+__pycache__/
+*.py[cod]
+
+# macOS metadata
+.DS_Store
+Code/.DS_Store
+Code/**/.DS_Store
