@@ -6,7 +6,7 @@
 const char *ssid_STA = "definitelynotarouter"; //Enter the router name
 const char *password_STA = "notapwd777"; //Enter the router password
 
-IPAddress local_IP(192,168,1,100);//Set the IP address of ESP32 itself
+IPAddress local_IP(192,168, 50, 111);//Set the IP address of ESP32 itself
 IPAddress gateway(192,168,50,1);   //Set the gateway of ESP32 itself
 IPAddress subnet(255,255,255,0);  //Set the subnet mask for ESP32 itself
 
@@ -58,17 +58,16 @@ void loop() {
   WiFiClient client = server.available();            // listen for incoming clients
   if (client) {     
     while(client.connected()){
-      int b = client.read();
-      if(b<0) break;
-      Serial.write((uint8_t)b);
-      lastActivity = millis();
-      if (millis() - lastActivity > 10000) break;
-      delay(1);
+      if(client.available()){
+        char b = client.read();
+        Serial.println(b);
+      }
+      
     }
                                       // if you get a client,
-    # TODO: Loop while the client is connected
-    # TODO: Check if the ESP32 is receiving data from the laptop  
-    # TODO: If the ESP32 has data to read, grab it and print it over Serial ot the Arduino Nano
+    // # TODO: Loop while the client is connected
+    // # TODO: Check if the ESP32 is receiving data from the laptop  
+    // # TODO: If the ESP32 has data to read, grab it and print it over Serial ot the Arduino Nano
     client.stop();                                  // stop the client connecting.
   }
-s}
+}
