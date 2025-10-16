@@ -7,7 +7,7 @@ import queue
 import time
 import select
 
-LINE_FOLLOW_IP = '192.168.50.102'
+LINE_FOLLOW_IP = '192.168.50.111'
 TCP_PORT = 5005
 
 line_follow_url='http://' + LINE_FOLLOW_IP + '/stream'
@@ -60,6 +60,8 @@ def follow_line(sock):
             103,  # block size
             10   # constant to subtract
         )
+        # gray_threshold = cv2.inRange(gray_frame, 0, 100)
+
         # Fill small holes in detection
         hole_kernel = np.ones((5, 5), np.uint8)
         gray_threshold = cv2.morphologyEx(gray_threshold, cv2.MORPH_CLOSE, hole_kernel)
@@ -116,7 +118,7 @@ def follow_line(sock):
 def main():
     time.sleep(5)
     # Connect to both the line following and object detection ESP32s
-    line_following_sock, pid_control_sock = socket_setup()
+    line_following_sock = socket_setup()
 
     # start following the line
     follow_line(line_following_sock)
