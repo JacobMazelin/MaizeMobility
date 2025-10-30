@@ -57,6 +57,16 @@ void loop() {
   Serial.print("cm");
   Serial.println();
 
+  if(inches < 5)
+  {
+    Serial.println("Person detected");
+    stopspeaker();
+    STOPCAR();
+  }
+  else
+  {
+    Serial.println("No Person detected");
+  }
   delay(100);
 }
 
