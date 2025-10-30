@@ -1,6 +1,6 @@
 
 // Defines the pin that the LED is connected to on the Arduino
-const in ledPin = 13 // (Number might change depending on what pin                       is used. (13 was reccommended for LED input.)
+const in ledPin = 13 // (Number might change depending on what pin is used. (13 was reccommended for LED input.)
 
 // Defines the digital pin as an output
 void setup() {
