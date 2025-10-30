@@ -1,0 +1,28 @@
+/*
+  Ambulance Siren Sound for DFRobot Speaker v1.0 (FIT0449)
+  Connect the speaker's positive (+) to D9 and negative (-) to GND
+*/
+
+const int speakerPin = 9;  // PWM output pin for speaker
+
+void setup() {
+  pinMode(speakerPin, OUTPUT);
+}
+
+void loop() {
+  // Upward tone sweep (like ambulance rising sound)
+  for (int freq = 600; freq <= 1000; freq += 5) {
+    tone(speakerPin, freq);
+    delay(5); // adjust speed of frequency change
+  }
+
+  // Downward tone sweep
+  for (int freq = 1000; freq >= 600; freq -= 5) {
+    tone(speakerPin, freq);
+    delay(5);
+  }
+
+  // Optional short pause between siren cycles
+  noTone(speakerPin);
+  delay(300);
+}
