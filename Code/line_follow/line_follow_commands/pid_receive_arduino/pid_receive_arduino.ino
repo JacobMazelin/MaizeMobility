@@ -7,6 +7,10 @@ int topspeed = 255;
 #define BACK 's'
 #define STOP 'x'
 
+const int trigPin = 7;   // if these clash with motor IN pins, move TRIG/ECHO to free pins
+const int echoPin = 8;
+const long OBST_IN = 5;
+
 void Set_Speed(int Left, int Right)
 {
   if (((int)Left)>topspeed) {Left = topspeed;}
@@ -65,6 +69,11 @@ void setup() {
   pinMode (11, OUTPUT);
 
   Serial.begin(115200);
+
+  // after your existing pinMode(...):
+  Serial.begin(9600);
+  pinMode(trigPinUS, OUTPUT);
+  pinMode(echoPinUS, INPUT);
 
   stopcar();
 }
@@ -129,5 +138,47 @@ void loop() {
       process_direction(direction);
       Set_Speed(leftSpeed, rightSpeed);
     }
+
+    if(readUltrasonicInches() < OBST_IN) {
+      stopcar();
+      //stopspeaker();
+      //stopLED();
+      //deployRamp();
+      //delay(5000); //wait for 5 seconds
+      //closeRamp();
+      //delay(5000);
+      continue;
+      Serial.println("Person detected");
+    }
+    else {
+      Serial.println("No Person detected");
+    }
   }
+}
+
+long readUltrasonicInches() {
+  // establish variables for duration of the ping, and the distance result
+  // in inches and centimeters:
+  long duration, inches;
+
+  // The HC-SR04 is triggered by a HIGH pulse of 10 or more microseconds.
+  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
+  
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // The HC-SR04 returns a HIGH pulse
+  // whose duration is the time (in microseconds) from the sending of the ping
+  // to the reception of its echo off of an object.
+  
+  duration = pulseIn(echoPin, HIGH);
+
+  // convert the time into a distance
+  inches = duration / 74 / 2;
+  Serial.print(inches);
+  Serial.print("in, ");
+  return inches;
 }
