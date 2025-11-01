@@ -1,4 +1,6 @@
+#include <Servo.h>
 
+// Motor control definitions
 int topspeed = 255;
 
 #define FORWARD 'w'
@@ -7,218 +9,244 @@ int topspeed = 255;
 #define BACK 's'
 #define STOP 'x'
 
-const int trigPin = 7;   // if these clash with motor IN pins, move TRIG/ECHO to free pins
-const int echoPin = 8;
+// Pin definitions
+// MOTOR PINS
+const int leftPWM = 5;
+const int rightPWM = 6;
+const int leftIN1 = 7;
+const int leftIN2 = 8;
+const int rightIN1 = 9;
+const int rightIN2 = 11;
+
+// ULTRASONIC SENSOR PINS (CHANGED from 7,8 to avoid conflict)
+const int trigPin = 12;   // Changed from 7
+const int echoPin = 13;   // Changed from 8
 const long OBST_IN = 5;
 
-void Set_Speed(int Left, int Right)
-{
-  if (((int)Left)>topspeed) {Left = topspeed;}
-  if (((int)Right)>topspeed) {Right = topspeed;}
+// SERVO PIN
+const int servoPin = 10;  // Changed from 9 to avoid motor conflict
+Servo MG90S;
+
+// SPEAKER/BUZZER PIN
+const int buzzerPin = 4;
+
+// LED PINS (assuming RGB LED or separate LEDs)
+const int ledRedPin = 2;
+const int ledWhitePin = 3;
+
+// State variables
+bool rampDeployed = false;
+
+void Set_Speed(int Left, int Right) {
+  if (Left > topspeed) Left = topspeed;
+  if (Right > topspeed) Right = topspeed;
   
-  analogWrite(5,Left);    //Send a speed value (Left = 0-255) to Pin #5 for setting the rotation speed of the two left-side wheels.
-  analogWrite(6,Right);   //Send a speed value (Right = 0-255) to Pin #6 for setting the rotation speed of the two right-side wheels.
+  analogWrite(leftPWM, Left);
+  analogWrite(rightPWM, Right);
 }
 
-void forward () {
-  //go forward
- digitalWrite(7, HIGH);       //set Pin #7 to HIGH and set Pin #8 to LOW, making two left-side wheels rotate forward.
- digitalWrite(8, LOW);
- digitalWrite(9, LOW);        //set Pin #11 to HIGH and set Pin #9 to LOW, making two right-side wheels rotate forward.
- digitalWrite(11, HIGH);
+void forward() {
+  digitalWrite(leftIN1, HIGH);
+  digitalWrite(leftIN2, LOW);
+  digitalWrite(rightIN1, LOW);
+  digitalWrite(rightIN2, HIGH);
 }
 
-void back () {
-   //go backward
- digitalWrite(7, LOW);        //set Pin #7 to LOW and set Pin #8 to HIGH, making two left-side wheels rotate backward.
- digitalWrite(8, HIGH);
- digitalWrite(9, HIGH);       //set Pin #11 to LOW and set Pin #9 to HIGH, making two right-side wheels rotate backward.
- digitalWrite(11, LOW);
+void back() {
+  digitalWrite(leftIN1, LOW);
+  digitalWrite(leftIN2, HIGH);
+  digitalWrite(rightIN1, HIGH);
+  digitalWrite(rightIN2, LOW);
 }
 
-void left () {
-  //turn left
- digitalWrite(7, LOW);        //set Pin #7 to LOW and set Pin #8 to HIGH, making two left-side wheels rotate backward.
- digitalWrite(8, HIGH);
- digitalWrite(9, LOW);        //set Pin #11 to HIGH and set Pin #9 to LOW, making two right-side wheels rotate forward.
- digitalWrite(11, HIGH);
+void left() {
+  digitalWrite(leftIN1, LOW);
+  digitalWrite(leftIN2, HIGH);
+  digitalWrite(rightIN1, LOW);
+  digitalWrite(rightIN2, HIGH);
 }
 
-void right () {
-  //turn right
- digitalWrite(7, HIGH);       //set Pin #7 to HIGH and set Pin #8 to LOW, making two left-side wheels rotate forward.
- digitalWrite(8, LOW);
- digitalWrite(9, HIGH);       //set Pin #11 to LOW and set Pin #9 to HIGH, making two right-side wheels rotate backward.
- digitalWrite(11, LOW);
+void right() {
+  digitalWrite(leftIN1, HIGH);
+  digitalWrite(leftIN2, LOW);
+  digitalWrite(rightIN1, HIGH);
+  digitalWrite(rightIN2, LOW);
 }
 
-void stopcar () {
- //stop
- analogWrite (5, 0);          //set the rotation speed of left-side wheels to "0".
- analogWrite (6, 0);          //set the rotation speed of right-side wheels to "0".
-}
-
-void setup() {
-  // put your setup code here, to run once:
-  pinMode (5, OUTPUT);     //Pins #5, 7, 8 are used for controlling the two left-side wheels.
-  pinMode (7, OUTPUT);
-  pinMode (8, OUTPUT);
-
-  pinMode (6, OUTPUT);    //Pins #6, 9, 11 are used for controlling the two right-side wheels
-  pinMode (9, OUTPUT);
-  pinMode (11, OUTPUT);
-
-  Serial.begin(115200);
-
-  // after your existing pinMode(...):
-  Serial.begin(9600);
-  pinMode(trigPinUS, OUTPUT);
-  pinMode(echoPinUS, INPUT);
-
-  stopcar();
-}
-
-void process_direction(char direction) {
-  switch(direction) {
-    case FORWARD: {
-      forward();
-      break;      
-    }
-
-    case LEFT: {
-      digitalWrite(7, HIGH);
-      digitalWrite(8, LOW);
-      break;
-    }
-    
-    case RIGHT: {
-      digitalWrite(9, LOW);
-      digitalWrite(11, HIGH);
-      break;
-    }
-
-    case BACK: {
-      back();
-      break;
-    }
-
-
-    case STOP: {
-      stopcar();
-      break;
-    }
-    
-  }
-}
-
-
-void loop() {
-  // put your main code here, to run repeatedly:
-  while (Serial.available()) {
-    String pid_command = Serial.readStringUntil('\n');
-    pid_command.trim(); // remove "\n" endline character
-
-    // if STOP received, then stop the car motors
-    if (pid_command == "STOP") {
-      stopcar();
-      continue;
-    }
-
-    // Parse into left/right speeds and direction
-    int firstCommaIndex = pid_command.indexOf(',');
-    int secondCommaIndex = pid_command.indexOf(',', firstCommaIndex + 1);
-
-    // Process both motor direction and speed
-    if (firstCommaIndex > 0 && secondCommaIndex > firstCommaIndex) {
-      int leftSpeed = pid_command.substring(0, firstCommaIndex).toInt();
-      int rightSpeed = pid_command.substring(firstCommaIndex + 1).toInt();
-      char direction = pid_command.substring(secondCommaIndex + 1)[0];
-
-      // Process motor direction
-      process_direction(direction);
-      Set_Speed(leftSpeed, rightSpeed);
-    }
-
-    if(readUltrasonicInches() < OBST_IN) {
-      stopcar();
-      deployRamp();
-      //stopspeaker();
-      //stopLED();
-      //delay(5000); //wait for 5 seconds
-      //closeRamp();
-      //delay(5000);
-      continue;
-      Serial.println("Person detected");
-    }
-    else {
-      Serial.println("No Person detected");
-    }
-  }
+void stopcar() {
+  analogWrite(leftPWM, 0);
+  analogWrite(rightPWM, 0);
 }
 
 long readUltrasonicInches() {
-  // establish variables for duration of the ping, and the distance result
-  // in inches and centimeters:
-  long duration, inches;
-
-  // The HC-SR04 is triggered by a HIGH pulse of 10 or more microseconds.
-  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
-  
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
-
-  // The HC-SR04 returns a HIGH pulse
-  // whose duration is the time (in microseconds) from the sending of the ping
-  // to the reception of its echo off of an object.
   
-  duration = pulseIn(echoPin, HIGH);
-
-  // convert the time into a distance
-  inches = duration / 74 / 2;
-  Serial.print(inches);
-  Serial.print("in, ");
+  unsigned long duration = pulseIn(echoPin, HIGH, 30000); // 30ms timeout
+  if (duration == 0) return 9999; // No echo detected
+  
+  long inches = duration / 74 / 2;
   return inches;
 }
 
-
-//Servo Motor Code
-void deployRamp () {
-#include <Servo.h>
-
-Servo MG90S;
-
-int potentiometerPin = 0;
-int pulsePin = 9;
-int analogVal = 0;
-int convertVal = 0;
-
-void setup()
-{
-
-MG90S.attach(pulsePin);
-
-}
-
-
-//Extra Added Code
-// Move down (angle numbers might need to be altered if incorrect)
+void deployRamp() {
+  if (rampDeployed) return; // Already deployed
+  
+  // Move servo down (deploy ramp)
   for (int angle = 135; angle >= 0; angle--) {
     MG90S.write(angle);
     delay(15);
   }
   
-  delay(10000); // Pause for 10 seconds for the passenger to get on
+  rampDeployed = true;
+  delay(10000); // Wait 10 seconds for passenger
+}
+
+void closeRamp() {
+  if (!rampDeployed) return; // Already closed
   
-  // Move back up
+  // Move servo back up
   for (int angle = 0; angle <= 135; angle++) {
     MG90S.write(angle);
     delay(15);
   }
-
-  delay(1000); // Pause again
+  
+  rampDeployed = false;
+  delay(1000);
 }
+
+void startSpeaker() {
+  // TODO @Gavyn: Add code to start the speaker
+
 }
 
+void stopSpeaker() {
+  // TODO @Gavyn: Add code to stop the speaker
+}
+
+void startLED() {
+  digitalWrite(ledRedPin, HIGH);
+  delay(1000); 
+  digitalWrite(ledWhitePin, LOW);
+}
+
+void stopLED() {
+  digitalWrite(ledRedPin, LOW);
+  digitalWrite(ledWhitePin, LOW);
+}
+
+void process_direction(char direction) {
+  switch(direction) {
+    case FORWARD:
+      forward();
+      break;
+    case LEFT:
+      left();
+      break;
+    case RIGHT:
+      right();
+      break;
+    case BACK:
+      back();
+      break;
+    case STOP:
+      stopcar();
+      break;
+  }
+}
+
+void setup() {
+  // Motor pins
+  pinMode(leftPWM, OUTPUT);
+  pinMode(rightPWM, OUTPUT);
+  pinMode(leftIN1, OUTPUT);
+  pinMode(leftIN2, OUTPUT);
+  pinMode(rightIN1, OUTPUT);
+  pinMode(rightIN2, OUTPUT);
+
+  // Ultrasonic pins
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  // Servo
+  MG90S.attach(servoPin);
+
+  // Buzzer
+  pinMode(buzzerPin, OUTPUT);
+
+  // LEDs
+  pinMode(ledRedPin, OUTPUT);
+  pinMode(ledWhitePin, OUTPUT);
+
+  // Serial communication with ESP32
+  Serial.begin(115200);
+
+  // Initialize states
+  stopcar();
+  closeRamp();
+  stopSpeaker();
+  stopLED();
+}
+
+void loop() {
+  // SAFETY FIRST: Always check ultrasonic distance every loop
+  long inches = readUltrasonicInches();
+  
+  if (inches < OBST_IN) {
+    stopcar();
+    
+    if (!rampDeployed) {
+      // First time detecting obstacle - deploy ramp and activate indicators
+      Serial.println("OBSTACLE DETECTED: Deploying ramp");
+      deployRamp();
+      startSpeaker();
+      startLED();
+      
+      delay(2000); // Wait for loading
+      
+      closeRamp();
+      delay(5000); // Wait for ramp to close
+      
+      stopSpeaker();
+      stopLED();
+      
+      Serial.println("Ramp sequence complete");
+    }
+    
+    // Don't process motor commands while obstacle is detected
+    delay(100);
+    return;
+  }
+
+  // Process incoming PID commands from ESP32
+  while (Serial.available()) {
+    String pid_command = Serial.readStringUntil('\n');
+    pid_command.trim();
+
+    // Handle STOP command
+    if (pid_command == "STOP") {
+      stopcar();
+      delay(3000);
+      continue;
+    }
+
+    // Parse PID command: "leftSpeed,rightSpeed,direction"
+    int firstCommaIndex = pid_command.indexOf(',');
+    int secondCommaIndex = pid_command.indexOf(',', firstCommaIndex + 1);
+
+    if (firstCommaIndex > 0 && secondCommaIndex > firstCommaIndex) {
+      int leftSpeed = pid_command.substring(0, firstCommaIndex).toInt();
+      int rightSpeed = pid_command.substring(firstCommaIndex + 1).toInt();
+      char direction = pid_command.substring(secondCommaIndex + 1)[0];
+
+      process_direction(direction);
+      Set_Speed(leftSpeed, rightSpeed);
+    }
+  }
+  
+  // Small delay to prevent overwhelming the loop
+  delay(10);
+}
