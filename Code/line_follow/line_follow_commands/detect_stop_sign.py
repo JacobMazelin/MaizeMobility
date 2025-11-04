@@ -9,9 +9,9 @@ import queue
 import torch
 
 #TODO Change port to upper camera
-TCP_IP = '192.168.50.111'
+TCP_IP = '192.168.50.112'
 TCP_PORT = 5005
-url = 'http://192.168.50.111/stream'
+url = 'http://192.168.50.112/stream'
 
 # COCO class ID for stop sign
 STOP_SIGN_CLASS_ID = 11

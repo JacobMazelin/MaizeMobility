@@ -200,7 +200,7 @@ void loop() {
     
     if (!rampDeployed) {
       // First time detecting obstacle - deploy ramp and activate indicators
-      Serial.println("OBSTACLE DETECTED: Deploying ramp");
+      Serial.println("PERSON DETECTED: Deploying ramp");
       deployRamp();
       startSpeaker();
       startLED();
@@ -239,7 +239,7 @@ void loop() {
 
     if (firstCommaIndex > 0 && secondCommaIndex > firstCommaIndex) {
       int leftSpeed = pid_command.substring(0, firstCommaIndex).toInt();
-      int rightSpeed = pid_command.substring(firstCommaIndex + 1).toInt();
+      int rightSpeed = pid_command.substring(firstCommaIndex + 1, secondCommaIndex).toInt();
       char direction = pid_command.substring(secondCommaIndex + 1)[0];
 
       process_direction(direction);
