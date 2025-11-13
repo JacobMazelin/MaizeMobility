@@ -125,13 +125,15 @@ void closeRamp() {
 
 void startSpeaker() {
   Serial.println("Starting speaker");
-  // TODO @Gavyn: Add code to start the speaker
+const int speakerPin = 8; //Pin connector for the speaker (could change)
+const int frequency = 1000; // sound in Hz
 
+    tone(speakerPin, frequency);  //speaker continues to play
 }
 
 void stopSpeaker() {
   Serial.println("Stopping speaker");
-  // TODO @Gavyn: Add code to stop the speaker
+  noTone(speakerPin);  //stops sound
 }
 
 void startLED() {
