@@ -18,13 +18,13 @@ STOP_SIGN_CLASS_ID = 11
 
 # Calibration constants (you'll need to tune these)
 # Real-world size of a stop sign in inches (typical US stop sign is 30 inches)
-REAL_STOP_SIGN_HEIGHT_INCHES = 30.0
+REAL_STOP_SIGN_HEIGHT_INCHES = 6.5
 
 # Focal length estimate (in pixels) - calculate from your camera or estimate
 # Formula: focal_length = (detected_height_pixels * known_distance) / real_object_height
 # Example: If at 5 feet (60 inches), stop sign appears 100 pixels tall:
 # FOCAL_LENGTH = (100 * 60) / 30 = 200 pixels
-FOCAL_LENGTH = 200.0  # Start with estimate, tune based on testing
+FOCAL_LENGTH = 180  # Start with estimate, tune based on testing
 
 def calculate_distance(box_height_pixels, real_height_inches, focal_length):
     """
@@ -46,9 +46,9 @@ def calculate_distance(box_height_pixels, real_height_inches, focal_length):
     return distance
 
 def setup():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    stop_sign_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print(f"Connecting to ESP32 at {TCP_IP}:{TCP_PORT}...")
-    s.connect((TCP_IP, TCP_PORT))
+    stop_sign_socket.connect((TCP_IP, TCP_PORT))
     print("Successfully connected to ESP32.")
 
     print("Loading YOLO model...")
@@ -65,7 +65,7 @@ def setup():
     print("Successfully loaded YOLO model.")
     print("YOLO is running on", "GPU" if is_gpu else "CPU")
 
-    return model, device, s
+    return model, device, stop_sign_socket
 
 def stream_reader(frame_queue, url):
     print("Starting stream_reader thread...")

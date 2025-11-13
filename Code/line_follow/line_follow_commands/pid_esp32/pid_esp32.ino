@@ -21,7 +21,7 @@ void startCameraServer();
 #define K_P 0.5
 #define K_I 0.00
 #define K_D 0.002
-#define BASE_SPEED 75
+#define BASE_SPEED 125
 #define INFLECTION_POINT 30.0
 
 void cameraServerSetup() {

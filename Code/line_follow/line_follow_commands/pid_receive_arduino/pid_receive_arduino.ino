@@ -19,23 +19,24 @@ const int rightIN1 = 9;
 const int rightIN2 = 11;
 
 // ULTRASONIC SENSOR PINS (CHANGED from 7,8 to avoid conflict)
-const int trigPin = 12;   // Changed from 7
+const int trigPin = 10;   // Changed from 7
 const int echoPin = 13;   // Changed from 8
 const long OBST_IN = 5;
 
 // SERVO PIN
-const int servoPin = 10;  // Changed from 9 to avoid motor conflict
+const int servoPin = 12;  // Changed from 9 to avoid motor conflict
 Servo MG90S;
 
 // SPEAKER/BUZZER PIN
 const int buzzerPin = 4;
 
 // LED PINS (assuming RGB LED or separate LEDs)
-const int ledRedPin = 2;
-const int ledWhitePin = 3;
+// const int ledRedPin = 2;
+// const int ledWhitePin = 3;
 
 // State variables
 bool rampDeployed = false;
+bool stopSignPassed = false;
 
 void Set_Speed(int Left, int Right) {
   if (Left > topspeed) Left = topspeed;
@@ -93,10 +94,13 @@ long readUltrasonicInches() {
 }
 
 void deployRamp() {
+  Serial.println("Deploying ramp");
   if (rampDeployed) return; // Already deployed
   
   // Move servo down (deploy ramp)
   for (int angle = 135; angle >= 0; angle--) {
+    Serial.print("Moving servo to angle: ");
+    Serial.println(angle);
     MG90S.write(angle);
     delay(15);
   }
@@ -107,6 +111,7 @@ void deployRamp() {
 
 void closeRamp() {
   if (!rampDeployed) return; // Already closed
+  Serial.println("Closing ramp");
   
   // Move servo back up
   for (int angle = 0; angle <= 135; angle++) {
@@ -119,23 +124,27 @@ void closeRamp() {
 }
 
 void startSpeaker() {
+  Serial.println("Starting speaker");
   // TODO @Gavyn: Add code to start the speaker
 
 }
 
 void stopSpeaker() {
+  Serial.println("Stopping speaker");
   // TODO @Gavyn: Add code to stop the speaker
 }
 
 void startLED() {
-  digitalWrite(ledRedPin, HIGH);
-  delay(1000); 
-  digitalWrite(ledWhitePin, LOW);
+  Serial.println("Starting LED");
+  // digitalWrite(ledRedPin, HIGH);
+  // delay(1000); 
+  // digitalWrite(ledWhitePin, LOW);
 }
 
 void stopLED() {
-  digitalWrite(ledRedPin, LOW);
-  digitalWrite(ledWhitePin, LOW);
+  Serial.println("Stopping LED");
+  // digitalWrite(ledRedPin, LOW);
+  // digitalWrite(ledWhitePin, LOW);
 }
 
 void process_direction(char direction) {
@@ -178,37 +187,36 @@ void setup() {
   pinMode(buzzerPin, OUTPUT);
 
   // LEDs
-  pinMode(ledRedPin, OUTPUT);
-  pinMode(ledWhitePin, OUTPUT);
+  // pinMode(ledRedPin, OUTPUT);
+  // pinMode(ledWhitePin, OUTPUT);
 
   // Serial communication with ESP32
   Serial.begin(115200);
 
   // Initialize states
   stopcar();
-  closeRamp();
+  MG90S.write(135);  // Set to closed position
   stopSpeaker();
   stopLED();
 }
 
 void loop() {
-  // SAFETY FIRST: Always check ultrasonic distance every loop
+  // SAFETY FIRST: Check ultrasonic EVERY loop iteration
   long inches = readUltrasonicInches();
   
-  if (inches < OBST_IN) {
+  if(inches < OBST_IN) {
     stopcar();
     
     if (!rampDeployed) {
-      // First time detecting obstacle - deploy ramp and activate indicators
       Serial.println("PERSON DETECTED: Deploying ramp");
       deployRamp();
       startSpeaker();
       startLED();
       
-      delay(2000); // Wait for loading
+      delay(2000);
       
       closeRamp();
-      delay(5000); // Wait for ramp to close
+      delay(5000);
       
       stopSpeaker();
       stopLED();
@@ -216,9 +224,8 @@ void loop() {
       Serial.println("Ramp sequence complete");
     }
     
-    // Don't process motor commands while obstacle is detected
     delay(100);
-    return;
+    return;  // Exit early, don't process commands while obstacle detected
   }
 
   // Process incoming PID commands from ESP32
@@ -227,9 +234,10 @@ void loop() {
     pid_command.trim();
 
     // Handle STOP command
-    if (pid_command == "STOP") {
+    if (pid_command == "STOP" && !stopSignPassed) {
       stopcar();
       delay(3000);
+      stopSignPassed = true;
       continue;
     }
 
@@ -247,6 +255,5 @@ void loop() {
     }
   }
   
-  // Small delay to prevent overwhelming the loop
   delay(10);
 }

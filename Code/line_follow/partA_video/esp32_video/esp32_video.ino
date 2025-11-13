@@ -11,7 +11,7 @@
 const char *ssid_STA = "definitelynotarouter"; //Enter the router name
 const char *password_STA = "notapwd777"; //Enter the router password
 
-IPAddress local_IP(192, 168, 50, 111);//Set the IP address of ESP32 itself
+IPAddress local_IP(192, 168, 50, 112);//Set the IP address of ESP32 itself
 IPAddress gateway(192, 168, 50, 1); // gateway for this device is the AP/Object Detection ESP32's IP Address
 IPAddress subnet(255, 255, 255, 0);
 
@@ -113,6 +113,12 @@ void loop() {
       if (client.available()) {                     // if there's bytes to read from the client,
         char direction = client.read(); // receive manual control character
         Serial.println(direction);
+        String message = client.readStringUntil('\n');
+        message.trim();
+        
+        if(message == "STOP") {
+          Serial.println("STOP");
+        }
         //Serial.println(client.readStringUntil('%')); // print it out the serial monitor
         //Serial.print(client.readStringUntil('%'));  //print the signal stream to the serial port connecting to the microcontroller
         //while(client.read()>0);                     // clear the wifi receive area cache
