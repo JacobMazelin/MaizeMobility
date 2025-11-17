@@ -111,8 +111,8 @@ void loop() {
     //Serial.println("Client connected.");
     while (client.connected()) {                    // loop while the client's connected
       if (client.available()) {                     // if there's bytes to read from the client,
-        char direction = client.read(); // receive manual control character
-        Serial.println(direction);
+        // char direction = client.read(); // receive manual control character
+        // Serial.println(direction);
         String message = client.readStringUntil('\n');
         message.trim();
         

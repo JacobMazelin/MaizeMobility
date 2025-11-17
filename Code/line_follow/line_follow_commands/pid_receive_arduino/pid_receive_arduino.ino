@@ -25,10 +25,13 @@ const long OBST_IN = 5;
 
 // SERVO PIN
 const int servoPin = 12;  // Changed from 9 to avoid motor conflict
-Servo MG90S;
+Servo MG90SLeft;
+Servo MG90SRight;
 
 // SPEAKER/BUZZER PIN
 const int buzzerPin = 4;
+const int startingServoPos = 0;  // Servo starts at 0 degrees (closed/up position)
+const int deployedServoPos = 105;  // Servo deploys to 90 degrees (open/down position)
 
 // LED PINS (assuming RGB LED or separate LEDs)
 // const int ledRedPin = 2;
@@ -98,15 +101,17 @@ void deployRamp() {
   if (rampDeployed) return; // Already deployed
   
   // Move servo down (deploy ramp)
-  for (int angle = 135; angle >= 0; angle--) {
     Serial.print("Moving servo to angle: ");
-    Serial.println(angle);
-    MG90S.write(angle);
-    delay(15);
-  }
+    Serial.println(deployedServoPos);
+    for (int angle = startingServoPos; angle <= deployedServoPos; angle+=15) {
+      Serial.print("Moving servo to angle: ");
+      Serial.println(angle);
+      MG90SLeft.write(angle);
+      delay(15);
+    }
+  
   
   rampDeployed = true;
-  delay(10000); // Wait 10 seconds for passenger
 }
 
 void closeRamp() {
@@ -114,26 +119,30 @@ void closeRamp() {
   Serial.println("Closing ramp");
   
   // Move servo back up
-  for (int angle = 0; angle <= 135; angle++) {
-    MG90S.write(angle);
+  Serial.print("Moving servo to angle: ");
+  Serial.print(startingServoPos);
+
+  for (int angle = deployedServoPos; angle >= startingServoPos; angle-=15) {
+    MG90SLeft.write(angle);
     delay(15);
   }
-  
+  MG90SLeft.write(startingServoPos);
+
   rampDeployed = false;
-  delay(1000);
 }
 
 void startSpeaker() {
   Serial.println("Starting speaker");
-const int speakerPin = 8; //Pin connector for the speaker (could change)
-const int frequency = 1000; // sound in Hz
+  const int speakerPin = 8; //Pin connector for the speaker (could change)
+  const int frequency = 1000; // sound in Hz
 
-    tone(speakerPin, frequency);  //speaker continues to play
+  tone(speakerPin, frequency);  //speaker continues to play
 }
 
 void stopSpeaker() {
   Serial.println("Stopping speaker");
   noTone(speakerPin);  //stops sound
+  
 }
 
 void startLED() {
@@ -183,7 +192,7 @@ void setup() {
   pinMode(echoPin, INPUT);
 
   // Servo
-  MG90S.attach(servoPin);
+  MG90SLeft.attach(servoPin);
 
   // Buzzer
   pinMode(buzzerPin, OUTPUT);
@@ -197,7 +206,9 @@ void setup() {
 
   // Initialize states
   stopcar();
-  MG90S.write(135);  // Set to closed position
+  MG90SLeft.write(startingServoPos);  // Set servo to 0 degrees (closed position)
+  delay(1500);  // Give servo time to reach initial position
+  rampDeployed = false;  // Ensure state is reset
   stopSpeaker();
   stopLED();
 }
@@ -218,7 +229,6 @@ void loop() {
       delay(2000);
       
       closeRamp();
-      delay(5000);
       
       stopSpeaker();
       stopLED();

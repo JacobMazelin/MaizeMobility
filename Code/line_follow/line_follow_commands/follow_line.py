@@ -44,8 +44,9 @@ def follow_line(sock):
     while True:
         # Capture current frame from ESP32
         ret, frame = vid.read()
-        if not ret:
+        if not ret or frame is None:
             print("Couldn't read frame. Killing program.")
+            break
 
         # Blur the frame to reduce noise
         frame = cv2.GaussianBlur(frame, (5, 5), 0)
@@ -84,16 +85,27 @@ def follow_line(sock):
                 cv2.drawContours(frame, [bestContour], -1, (0, 255, 0), 2)
 
                 M = cv2.moments(bestContour)
-                center_of_contour = np.array([int(M['m10'] / M['m00']), int(M['m01'] / M['m00'])], int)
+                # Check for division by zero
+                if M['m00'] != 0:
+                    center_of_contour = np.array([int(M['m10'] / M['m00']), int(M['m01'] / M['m00'])], int)
 
-                # Calculate CTE (Cross-Track Error) between detected line and frame center
-                cte_x = center_of_frame[0] - center_of_contour[0]
-                cv2.putText(frame, "Cross Track Error (x): " + str(cte_x), (0, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255))
-                print(f"X-axis CTE: {cte_x}")
-                sock.sendall((str(cte_x) + "\n").encode("utf-8"))
+                    # Calculate CTE (Cross-Track Error) between detected line and frame center
+                    cte_x = center_of_frame[0] - center_of_contour[0]
+                    cv2.putText(frame, "Cross Track Error (x): " + str(cte_x), (0, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255))
+                    print(f"X-axis CTE: {cte_x}")
+                    sock.sendall((str(cte_x) + "\n").encode("utf-8"))
+                else:
+                    # Use frame center as fallback if moments calculation fails
+                    cv2.putText(frame, "Line: MOMENT ERROR", (0, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                    sock.sendall(b"STOP\n")
 
             else:
                 cv2.putText(frame, "Line: NOT FOUND", (0, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                # Send STOP when line is lost
+                try:
+                    sock.sendall(b"STOP\n")
+                except:
+                    pass
 
         except Exception as e:
             print(f"Exception incurred: {e}")
