@@ -18,10 +18,10 @@ WiFiServer server(port);
 void startCameraServer();
 
 // define PID control constants
-#define K_P 0.5 //TODO: Lower this value
+#define K_P 0.3 //TODO: Lower this value
 #define K_I 0.00
-#define K_D 0.002
-#define BASE_SPEED 125
+#define K_D 0
+#define BASE_SPEED 95
 #define INFLECTION_POINT 30.0
 
 void cameraServerSetup() {

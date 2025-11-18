@@ -1,4 +1,5 @@
 #include <Servo.h>
+#include <SoftwareSerial.h>
 
 // Motor control definitions
 int topspeed = 255;
@@ -40,6 +41,10 @@ const int deployedServoPos = 105;  // Servo deploys to 90 degrees (open/down pos
 // State variables
 bool rampDeployed = false;
 bool stopSignPassed = false;
+SoftwareSerial mp3(3, 4);
+const uint8_t track1[] = {0x7E, 0x03, 0x00, 0x02, 0x00, 0x01, 0xEF};
+const uint8_t track2[] = {0x7E, 0x03, 0x00, 0x02, 0x00, 0x02, 0xEF};
+const uint8_t track3[] = {0x7E, 0x03, 0x00, 0x02, 0x00, 0x03, 0xEF};
 
 void Set_Speed(int Left, int Right) {
   if (Left > topspeed) Left = topspeed;
@@ -131,17 +136,20 @@ void closeRamp() {
   rampDeployed = false;
 }
 
-void startSpeaker() {
+void startSpeaker(const uint8_t *cmd, size_t len) {
   Serial.println("Starting speaker");
-  const int speakerPin = 8; //Pin connector for the speaker (could change)
-  const int frequency = 1000; // sound in Hz
+  // const int speakerPin = 8; //Pin connector for the speaker (could change)
+  // const int frequency = 1000; // sound in Hz
+  for(size_t i = 0; i < len; i++) {
+    mp3.write(cmd[i]);
+  }
 
-  tone(speakerPin, frequency);  //speaker continues to play
+  // tone(speakerPin, frequency);  //speaker continues to play
 }
 
 void stopSpeaker() {
   Serial.println("Stopping speaker");
-  noTone(speakerPin);  //stops sound
+  // noTone(speakerPin);  //stops sound
   
 }
 
@@ -196,6 +204,11 @@ void setup() {
 
   // Buzzer
   pinMode(buzzerPin, OUTPUT);
+  
+  mp3.begin(9600);
+  startSpeaker(track1, sizeof(track1));
+  
+  // mp3.listen();
 
   // LEDs
   // pinMode(ledRedPin, OUTPUT);
@@ -223,7 +236,7 @@ void loop() {
     if (!rampDeployed) {
       Serial.println("PERSON DETECTED: Deploying ramp");
       deployRamp();
-      startSpeaker();
+      startSpeaker(track2, sizeof(track2));
       startLED();
       
       delay(2000);
@@ -234,12 +247,13 @@ void loop() {
       stopLED();
       
       Serial.println("Ramp sequence complete");
+      startSpeaker(track2, sizeof(track2));
     }
     
     delay(100);
     return;  // Exit early, don't process commands while obstacle detected
   }
-
+  
   // Process incoming PID commands from ESP32
   while (Serial.available()) {
     String pid_command = Serial.readStringUntil('\n');
