@@ -16,6 +16,8 @@ low_black = np.uint8([55, 55, 55])
 high_black = np.uint8([0, 0, 0])
 kernel = np.ones((15, 15), np.float32) / 255
 
+MAX_LOST_FRAMES = 5
+
 def socket_setup():
     line_follow_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -41,6 +43,8 @@ def recv_line(sock):
 
 def follow_line(sock):
     vid = cv2.VideoCapture(line_follow_url)
+    lost_frames = 0
+    stop_sent = False
     while True:
         # Capture current frame from ESP32
         ret, frame = vid.read()
@@ -94,18 +98,26 @@ def follow_line(sock):
                     cv2.putText(frame, "Cross Track Error (x): " + str(cte_x), (0, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255))
                     print(f"X-axis CTE: {cte_x}")
                     sock.sendall((str(cte_x) + "\n").encode("utf-8"))
+                    lost_frames = 0
+                    stop_sent = False
                 else:
                     # Use frame center as fallback if moments calculation fails
                     cv2.putText(frame, "Line: MOMENT ERROR", (0, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-                    sock.sendall(b"STOP\n")
-
+                    lost_frames += 1
+        
             else:
                 cv2.putText(frame, "Line: NOT FOUND", (0, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
                 # Send STOP when line is lost
+                lost_frames += 1
+
+            if lost_frames >= MAX_LOST_FRAMES and not stop_sent:
                 try:
                     sock.sendall(b"STOP\n")
-                except:
-                    pass
+                    stop_sent = True
+                except Exception as sock_err:
+                    print(f"Failed to send STOP: {sock_err}")
+                # don't grow lost_frames unbounded so we can trigger again after recovery
+                lost_frames = MAX_LOST_FRAMES
 
         except Exception as e:
             print(f"Exception incurred: {e}")
@@ -137,4 +149,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

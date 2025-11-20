@@ -30,21 +30,21 @@ Servo MG90SLeft;
 Servo MG90SRight;
 
 // SPEAKER/BUZZER PIN
-const int buzzerPin = 4;
+// const int buzzerPin = 4;
 const int startingServoPos = 0;  // Servo starts at 0 degrees (closed/up position)
 const int deployedServoPos = 105;  // Servo deploys to 90 degrees (open/down position)
 
 // LED PINS (assuming RGB LED or separate LEDs)
-// const int ledRedPin = 2;
-// const int ledWhitePin = 3;
+const int ledRedPin = 2;
+const int ledWhitePin = 3;
 
 // State variables
 bool rampDeployed = false;
 bool stopSignPassed = false;
-SoftwareSerial mp3(3, 4);
-const uint8_t track1[] = {0x7E, 0x03, 0x00, 0x02, 0x00, 0x01, 0xEF};
-const uint8_t track2[] = {0x7E, 0x03, 0x00, 0x02, 0x00, 0x02, 0xEF};
-const uint8_t track3[] = {0x7E, 0x03, 0x00, 0x02, 0x00, 0x03, 0xEF};
+SoftwareSerial mp3(1, 0);
+const uint8_t track1[] = {0x7E, 0x01, 0x00, 0x02, 0x00, 0x01, 0xEF};
+const uint8_t track2[] = {0x7E, 0x01, 0x00, 0x02, 0x00, 0x02, 0xEF};
+const uint8_t track3[] = {0x7E, 0x01, 0x00, 0x02, 0x00, 0x03, 0xEF};
 
 void Set_Speed(int Left, int Right) {
   if (Left > topspeed) Left = topspeed;
@@ -146,6 +146,11 @@ void startSpeaker(const uint8_t *cmd, size_t len) {
 
   // tone(speakerPin, frequency);  //speaker continues to play
 }
+void setVolume(uint8_t level) {
+  if (level > 30) level = 30;              // valid range 0–30
+  uint8_t cmd[] = {0x7E, 0x06, 0x00, 0x02, 0x00, level, 0xEF};
+  startSpeaker(cmd, sizeof(cmd));
+}
 
 void stopSpeaker() {
   Serial.println("Stopping speaker");
@@ -155,15 +160,15 @@ void stopSpeaker() {
 
 void startLED() {
   Serial.println("Starting LED");
-  // digitalWrite(ledRedPin, HIGH);
+  digitalWrite(ledRedPin, HIGH);
   // delay(1000); 
-  // digitalWrite(ledWhitePin, LOW);
+  digitalWrite(ledWhitePin, HIGH);
 }
 
 void stopLED() {
   Serial.println("Stopping LED");
-  // digitalWrite(ledRedPin, LOW);
-  // digitalWrite(ledWhitePin, LOW);
+  digitalWrite(ledRedPin, LOW);
+  digitalWrite(ledWhitePin, LOW);
 }
 
 void process_direction(char direction) {
@@ -203,9 +208,10 @@ void setup() {
   MG90SLeft.attach(servoPin);
 
   // Buzzer
-  pinMode(buzzerPin, OUTPUT);
+  // pinMode(buzzerPin, OUTPUT);
   
   mp3.begin(9600);
+  // setVolume(10);
   startSpeaker(track1, sizeof(track1));
   
   // mp3.listen();
@@ -223,12 +229,14 @@ void setup() {
   delay(1500);  // Give servo time to reach initial position
   rampDeployed = false;  // Ensure state is reset
   stopSpeaker();
-  stopLED();
+  // stopLED();
+  // startLED();
 }
 
 void loop() {
   // SAFETY FIRST: Check ultrasonic EVERY loop iteration
   long inches = readUltrasonicInches();
+  
   
   if(inches < OBST_IN) {
     stopcar();
@@ -237,14 +245,13 @@ void loop() {
       Serial.println("PERSON DETECTED: Deploying ramp");
       deployRamp();
       startSpeaker(track2, sizeof(track2));
-      startLED();
+      // stopLED();
       
       delay(2000);
       
       closeRamp();
       
       stopSpeaker();
-      stopLED();
       
       Serial.println("Ramp sequence complete");
       startSpeaker(track2, sizeof(track2));
