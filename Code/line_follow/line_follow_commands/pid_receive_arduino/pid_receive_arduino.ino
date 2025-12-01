@@ -35,13 +35,13 @@ const int startingServoPos = 0;  // Servo starts at 0 degrees (closed/up positio
 const int deployedServoPos = 105;  // Servo deploys to 90 degrees (open/down position)
 
 // LED PINS (assuming RGB LED or separate LEDs)
-const int ledRedPin = 2;
-const int ledWhitePin = 3;
+const int ledRedPin = 1;
+const int ledWhitePin = 2;
 
 // State variables
 bool rampDeployed = false;
 bool stopSignPassed = false;
-SoftwareSerial mp3(1, 0);
+SoftwareSerial mp3(4, 3);
 const uint8_t track1[] = {0x7E, 0x01, 0x00, 0x02, 0x00, 0x01, 0xEF};
 const uint8_t track2[] = {0x7E, 0x01, 0x00, 0x02, 0x00, 0x02, 0xEF};
 const uint8_t track3[] = {0x7E, 0x01, 0x00, 0x02, 0x00, 0x03, 0xEF};
@@ -162,7 +162,7 @@ void startLED() {
   Serial.println("Starting LED");
   digitalWrite(ledRedPin, HIGH);
   // delay(1000); 
-  digitalWrite(ledWhitePin, HIGH);
+  digitalWrite(ledWhitePin, LOW);
 }
 
 void stopLED() {
@@ -228,7 +228,7 @@ void setup() {
   MG90SLeft.write(startingServoPos);  // Set servo to 0 degrees (closed position)
   delay(1500);  // Give servo time to reach initial position
   rampDeployed = false;  // Ensure state is reset
-  stopSpeaker();
+  // stopSpeaker();
   // stopLED();
   // startLED();
 }
@@ -244,17 +244,17 @@ void loop() {
     if (!rampDeployed) {
       Serial.println("PERSON DETECTED: Deploying ramp");
       deployRamp();
-      startSpeaker(track2, sizeof(track2));
+      startSpeaker(track1, sizeof(track1));
       // stopLED();
       
-      delay(2000);
+      delay(4000);
       
       closeRamp();
       
       stopSpeaker();
       
       Serial.println("Ramp sequence complete");
-      startSpeaker(track2, sizeof(track2));
+      startSpeaker(track3, sizeof(track2));
     }
     
     delay(100);

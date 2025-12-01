@@ -1,4 +1,5 @@
 // Part B: The goal of this code is to receive 2 numbers wirelessly, sum the result, and send the result back to the user's laptop via Wi-Fi.
+#include "esp_camera.h"
 #include <WiFi.h>
 
 #define port 5005

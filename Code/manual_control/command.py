@@ -7,7 +7,6 @@ TCP_IP = "192.168.50.111"   # Replace with your ESP32 IP
 TCP_PORT = 5005
 TIMEOUT_S = 5
 
-# START OF ENGR 100 DEFINED FUNCTIONS. DO NOT ALTER.
 def getch():
     """Read a single character (no Enter required). Works on Linux/macOS/WSL."""
     fd = sys.stdin.fileno()
@@ -26,26 +25,13 @@ def wifi_setup():
     s.connect((TCP_IP, TCP_PORT))
     print("Connected to ESP32.")
     return s
-# END OF ENGR 100 DEFINED FUNCTIONS. DO NOT ALTER.
 
 def main():
     sock = wifi_setup()
     print("Manual control ready. Use WASD to move, x to stop, q to quit.")
     while True:
-        # TODO: Read one character from the terminal
         ch = getch()
-
-        # TODO: Check if the terminal character matches WASDX
-        if ch == 'w':
-            sock.sendall((ch + "\n").encode("utf-8"))
-            print(f"Sent: {ch}")
-        elif ch == 'a':
-            sock.sendall((ch + "\n").encode("utf-8"))
-            print(f"Sent: {ch}")
-        elif ch == 's':
-            sock.sendall((ch + "\n").encode("utf-8"))
-            print(f"Sent: {ch}")
-        elif ch == 'd':
+        if ch in ["w", "a", "s", "d", "x"]:
             sock.sendall((ch + "\n").encode("utf-8"))
             print(f"Sent: {ch}")
 
