@@ -2,7 +2,7 @@
 #include <SoftwareSerial.h>
 
 // Motor control definitions
-int topspeed = 255;
+
 
 #define FORWARD 'w'
 #define LEFT 'a'
@@ -47,6 +47,7 @@ const uint8_t track2[] = {0x7E, 0x01, 0x00, 0x02, 0x00, 0x02, 0xEF};
 const uint8_t track3[] = {0x7E, 0x01, 0x00, 0x02, 0x00, 0x03, 0xEF};
 
 void Set_Speed(int Left, int Right) {
+  int topspeed = 255;
   if (Left > topspeed) Left = topspeed;
   if (Right > topspeed) Right = topspeed;
   
@@ -89,12 +90,12 @@ void stopcar() {
 
 long readUltrasonicInches() {
   digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
+  // delayMicroseconds(2);
   digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
+  // delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
   
-  unsigned long duration = pulseIn(echoPin, HIGH, 30000); // 30ms timeout
+  unsigned long duration = pulseIn(echoPin, HIGH, 3000); // 30ms timeout
   if (duration == 0) return 9999; // No echo detected
   
   long inches = duration / 74 / 2;
@@ -147,7 +148,7 @@ void startSpeaker(const uint8_t *cmd, size_t len) {
   // tone(speakerPin, frequency);  //speaker continues to play
 }
 void setVolume(uint8_t level) {
-  if (level > 30) level = 30;              // valid range 0–30
+  if (level > 30) level = 10;              // valid range 0–30
   uint8_t cmd[] = {0x7E, 0x06, 0x00, 0x02, 0x00, level, 0xEF};
   startSpeaker(cmd, sizeof(cmd));
 }
@@ -211,7 +212,7 @@ void setup() {
   // pinMode(buzzerPin, OUTPUT);
   
   mp3.begin(9600);
-  // setVolume(10);
+  
   startSpeaker(track1, sizeof(track1));
   
   // mp3.listen();
@@ -226,11 +227,8 @@ void setup() {
   // Initialize states
   stopcar();
   MG90SLeft.write(startingServoPos);  // Set servo to 0 degrees (closed position)
-  delay(1500);  // Give servo time to reach initial position
+  // delay(1500);  // Give servo time to reach initial position
   rampDeployed = false;  // Ensure state is reset
-  // stopSpeaker();
-  // stopLED();
-  // startLED();
 }
 
 void loop() {
@@ -247,7 +245,7 @@ void loop() {
       startSpeaker(track1, sizeof(track1));
       // stopLED();
       
-      delay(4000);
+      delay(8000);
       
       closeRamp();
       
@@ -257,7 +255,7 @@ void loop() {
       startSpeaker(track3, sizeof(track2));
     }
     
-    delay(100);
+    // delay(100);
     return;  // Exit early, don't process commands while obstacle detected
   }
   
@@ -288,5 +286,5 @@ void loop() {
     }
   }
   
-  delay(10);
+  // delay(10);
 }
